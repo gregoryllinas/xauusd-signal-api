@@ -1,30 +1,29 @@
-name: name: Update XAUUSD Fundamental Signal 
-
+name: Update XAUUSD Fundamental Signal 
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
 
 jobs:
   update-signal:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Update signal file
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate news signal
         run: |
           echo "USD_BIAS=NEUTRAL" > news_signal.txt
-          echo "USD_STRENGTH=0" >> news_signal.txt
           echo "NEWS_IMPACT=LOW" >> news_signal.txt
-          echo "MINUTES_TO_NEWS=999" >> news_signal.txt
           echo "ALLOW_TRADE=YES" >> news_signal.txt
           echo "LAST_UPDATE=$(date -u)" >> news_signal.txt
 
-      - name: Commit changes
+      - name: Commit and push changes
         run: |
-          git config user.name "xauusd-bot"
-          git config user.email "bot@xauusd.ai"
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
           git add news_signal.txt
-          git commit -m "Update signal" || echo "No changes"
+          git commit -m "Auto update XAUUSD signal" || echo "No changes to commit"
           git push
