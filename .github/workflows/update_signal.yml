@@ -1,4 +1,5 @@
-name: Update XAUUSD Fundamental Signal
+name: name: Update XAUUSD Fundamental Signal 
+
 
 on:
   workflow_dispatch:
