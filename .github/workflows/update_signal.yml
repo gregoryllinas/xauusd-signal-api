@@ -10,17 +10,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate signal
-        run: |
-          echo "USD_BIAS=NEUTRAL" > news_signal.txt
-          echo "NEWS_IMPACT=LOW" >> news_signal.txt
-          echo "ALLOW_TRADE=YES" >> news_signal.txt
-          echo "LAST_UPDATE=$(date -u)" >> news_signal.txt
+      -- name: Generate fundamental signal from TradingEconomics
+  env:
+    TE_USERNAME: ${{ secrets.TE_USERNAME }}
+    TE_PASSWORD: ${{ secrets.TE_PASSWORD }}
+  run: |
+    USD_EVENTS=$(curl -s "https://api.tradingeconomics.com/calendar/country/united%20states?c=${TE_USERNAME}:${TE_PASSWORD}&format=json")
 
-      - name: Commit changes
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add news_signal.txt
-          git commit -m "Auto update signal" || echo "No changes"
-          git push
+    HIGH_IMPACT=$(echo "$USD_EVENTS" | grep -i '"Importance":3' | wc -l)
+    MEDIUM_IMPACT=$(echo "$USD_EVENTS" | grep -i '"Importance":2' | wc -l)
+
+    if [ "$HIGH_IMPACT" -gt 0 ]; then
+      NEWS_IMPACT="HIGH"
+      ALLOW_TRADE="NO"
+    elif [ "$MEDIUM_IMPACT" -gt 0 ]; then
+      NEWS_IMPACT="MEDIUM"
+      ALLOW_TRADE="YES"
+    else
+      NEWS_IMPACT="LOW"
+      ALLOW_TRADE="YES"
+    fi
+
+    if [ "$HIGH_IMPACT" -gt 0 ]; then
+      USD_BIAS="VOLATILE"
+    else
+      USD_BIAS="STABLE"
+    fi
+
+    echo "USD_BIAS=$USD_BIAS" > news_signal.txt
+    echo "NEWS_IMPACT=$NEWS_IMPACT" >> news_signal.txt
+    echo "ALLOW_TRADE=$ALLOW_TRADE" >> news_signal.txt
+    echo "LAST_UPDATE=$(date -u)" >> news_signal.txt
